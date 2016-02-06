@@ -25,28 +25,30 @@ def linear_regression(x, y, theta, alpha, num_iter):
         J.append(j)
     return J
 
-def read_csv(filename, normalize):
+def read_csv(filename, normalize=False, do_normalization=None):
     with open(filename) as fd:
         data = list(csv.reader(fd))
     matrix = np.array(data, dtype=float)
     x, y = np.split(matrix, [matrix.shape[1]-1], axis=1)
     if normalize:
-        min_x = x.min(axis=0)
-        max_x = x.max(axis=0)
-        avg_x = x.sum(axis=0) / x.shape[0]
-        x = (x - avg_x) / (max_x - min_x + 1)
+        if do_normalization is None:
+            min_x = x.min(axis=0)
+            max_x = x.max(axis=0)
+            avg_x = x.sum(axis=0) / x.shape[0]
+            do_normalization = lambda x: (x - avg_x) / (max_x - min_x + 1)
+        x = do_normalization(x)
     x = np.hstack([np.ones(shape=(x.shape[0],1)), x])
-    return (x,y)
+    return (x, y, do_normalization)
 
 def main():
-    mat_x, mat_y = read_csv('datasets/crime/train.csv', normalize=True)
+    mat_x, mat_y, normalize = read_csv('datasets/crime/train.csv', normalize=True)
     theta = np.ones((mat_x.shape[1],1))
     print 'Training...\n'
     J = linear_regression(mat_x, mat_y, theta, 0.1, 3000)
     print 'Final J = {0}'.format(J[-1])
     print '*** theta =', theta.T.tolist()
 
-    test_x, test_y = read_csv('datasets/crime/test.csv', normalize=True)
+    test_x, test_y, normalize = read_csv('datasets/crime/test.csv', normalize=True, do_normalization=normalize)
     result_y = test_x.dot(theta)
     print '-'*80
     print 'Expected\t\t\tResult'
