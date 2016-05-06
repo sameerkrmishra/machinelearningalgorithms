@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# ex: set expandtab ts=4 sts=4 sw=4:
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -25,6 +26,24 @@ def linear_regression(x, y, theta, alpha, num_iter):
         J.append(j)
     return J
 
+def logistic_regression(x, y, theta, alpha, num_iter):
+    '''x is (m x n+1) 2D array - the input data
+    y is (m x 1) array - the output corresponding to x
+    thets is (n+1 x 1) 2D array - the parameters
+    alpha is a scalar - the scaling factor
+    num_iter is a scalar - number of times the algo iterates while learning
+    '''
+    h = lambda x: 1.0 / (1 + np.exp(-x.dot(theta)))
+    m = y.shape[0]
+    J = []
+    for i in xrange(num_iter):
+        loss = h(x) - y
+        gradient = x.T.dot(loss) / m    # (1/m) * sigma[i=1 to m] (h(x(i)) - y(i)) * x(i,j)
+        theta -= alpha * gradient
+        j = -1.0/m * ( y * np.log(h(x)) + (1-y) * np.log(1 - h(x)) ).sum()     # -1/m * sigma[i=1 to m] ( y[i]*log( h(x[i]) ) - (1-y[i])*( 1 - log( h(x[i]) ) ) )
+        J.append(j)
+    return J
+
 def read_csv(filename, normalize=False, do_normalization=None):
     with open(filename) as fd:
         data = list(csv.reader(fd))
@@ -41,19 +60,26 @@ def read_csv(filename, normalize=False, do_normalization=None):
     return (x, y, do_normalization)
 
 def main():
-    mat_x, mat_y, normalize = read_csv('datasets/crime/train.csv', normalize=True)
+    mat_x, mat_y, normalize = read_csv('datasets/logistic-regression/aps/aps1-train.csv', normalize=True)
     theta = np.ones((mat_x.shape[1],1))
     print 'Training...\n'
-    J = linear_regression(mat_x, mat_y, theta, 0.1, 3000)
+    #J = linear_regression(mat_x, mat_y, theta, 0.1, 3000)
+    J = logistic_regression(mat_x, mat_y, theta, 0.1, 3000)
     print 'Final J = {0}'.format(J[-1])
     print '*** theta =', theta.T.tolist()
 
-    test_x, test_y, normalize = read_csv('datasets/crime/test.csv', normalize=True, do_normalization=normalize)
-    result_y = test_x.dot(theta)
+    test_x, test_y, normalize = read_csv('datasets/logistic-regression/aps/aps1-test.csv', normalize=True, do_normalization=normalize)
+    #result_y = test_x.dot(theta)
+    result_y = 1.0/ ( 1 + np.exp (-test_x.dot(theta)) )
     print '-'*80
     print 'Expected\t\t\tResult'
+    correct_predictions = 0
     for expected, result in zip(test_y, result_y):
-        print '{0}\t\t\t{1}'.format(expected, result)
+        print '{0}\t\t\t{1}'.format(expected, int(result+0.5))
+        correct_predictions += 1 if int(expected) == int(result+0.5) else 0
+    print '-'*80
+    print 'Accuracy =', float(correct_predictions)/len(test_y) * 100, '%\t', correct_predictions, 'out of', len(test_y)
+    print '-'*80
 
     plt.plot(J)
     plt.xlabel('Iteration -->')
